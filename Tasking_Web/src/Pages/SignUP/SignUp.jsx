@@ -20,12 +20,12 @@ const SignUp = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const users = JSON.parse(localStorage.getItem("users")) || [];              
-    // const existingUser = users.find((user) => user.email === formData.email);
+    const existingUser = users.find((user) => user.email === formData.email);
     
-    // if (existingUser) {
-    //   alert("User already with this email!");
-    //   return;
-    // }
+    if (existingUser) {
+      alert("User already with this email!");
+      return;
+    }
     
     // Create id
     const newUser = {

@@ -38,8 +38,8 @@ const ToDo = ({ currentUser }) => {
     let updatedTasks;
 
     if (editTaskId) {
-      updatedTasks = tasks.map(t =>
-        t.id === editTaskId ? { ...t, text: task } : t
+      updatedTasks = tasks.map(task =>
+        task.id === editTaskId ? { ...task, text: task } : task
       );
       setEditTaskId(null);
     } else {
@@ -72,7 +72,7 @@ const ToDo = ({ currentUser }) => {
   };
 
   const handleEditTask = (id) => {
-    const taskToEdit = tasks.find(t => t.id === id);
+    const taskToEdit = tasks.find(tasks => tasks.id === id);
     if (taskToEdit) {
       setTask(taskToEdit.text);
       setEditTaskId(id);
@@ -141,17 +141,26 @@ const ToDo = ({ currentUser }) => {
       {completedTasks.map((task) => (
         <div
           key={task.id}
-          className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2"
+          className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 "
         >
           <span className="text">{task.text}</span>
           <div>
             
             <button
-              className="btn btn-danger btn-sm"
+              className="btn btn-danger btn-sm me-2"
               onClick={() => handleDeleteTask(task.id)}
             >
               Delete
             </button>
+
+            <button
+              className="btn btn-danger ms-2 btn-sm"
+              onClick={() => handleCompleteTask(task.id)}
+            >
+          Undo
+            </button>
+
+            
           </div>
         </div>
       ))}
