@@ -2,11 +2,12 @@ import React from 'react'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ToDo from '../../components/To-Do/ToDo';
 
-function DashBoard() {
+function DashBoard({currentUser}) {
   return (
     <div>
-        <h2>DashBoard</h2>
-        <ToDo/>
+       
+        <ToDo currentUser={currentUser} />
+    
     </div>
   )
 }

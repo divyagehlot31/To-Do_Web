@@ -1,157 +1,170 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-function ToDo() {
-  const [todo, setTodo] = useState({
-    taskAdd: "",
-    allTasks: [],
-    taskEdit: null,
-  });
+const ToDo = ({ currentUser }) => {
+  const [task, setTask] = useState("");
+  const [tasks, setTasks] = useState([]);
+  const [editTaskId, setEditTaskId] = useState(null);
 
-  const { taskAdd, allTasks, taskEdit } = todo;
+  const ToDo_Key = "all_todos";
 
-  const handleDelete = (index) => {
-    const update = [...allTasks];
-    update.splice(index, 1);
-    setTodo({
-      ...todo,
-      allTasks: update,
-    });
+  useEffect(() => {
+    if (currentUser?.id) {
+      loadTasks();
+    }
+  }, [currentUser]);
+
+  const saveTasks = (userTasks) => {
+    const allTasks = JSON.parse(localStorage.getItem(ToDo_Key)) || [];
+
+    const otherUserTasks = allTasks.filter(task => task.userId !== currentUser.id);
+
+    const updatedAllTasks = [...otherUserTasks, ...userTasks];
+
+    localStorage.setItem(ToDo_Key, JSON.stringify(updatedAllTasks));
   };
 
-  const handleComplete = (index) => {
-    const update = [...allTasks];
-    update[index].completed = true;
-    setTodo({
-      ...todo,
-      allTasks: update,
-    });
+  const loadTasks = () => {
+    const allTasks = JSON.parse(localStorage.getItem(ToDo_Key)) || [];
+
+    const userTasks = allTasks.filter(task => task.userId === currentUser.id);
+
+    setTasks(userTasks);
   };
 
-  const clearAllTasks = () => {
-    setTodo({
-      ...todo,
-      allTasks: [],
-    });
-  };
+  const handleAddTask = () => {
+    if (task.trim() === "") return;
 
-  const handleAdd = () => {
-    if (taskAdd.trim() === "") return;
+    let updatedTasks;
 
-    const newTask = {
-      text: taskAdd,
-      completed: false,
-    };
-
-    if (taskEdit !== null) {
-      const updated = [...allTasks];
-      updated[taskEdit] = newTask;
-      setTodo({
-        ...todo,
-        allTasks: updated,
-        taskAdd: "",
-        taskEdit: null,
-      });
+    if (editTaskId) {
+      updatedTasks = tasks.map(t =>
+        t.id === editTaskId ? { ...t, text: task } : t
+      );
+      setEditTaskId(null);
     } else {
-      setTodo({
-        ...todo,
-        allTasks: [...allTasks, newTask],
-        taskAdd: "",
-      });
+      const newTask = {
+        userId: currentUser.id,
+        text: task,
+        completed: false,
+        id: Date.now().toString(),
+      };
+      updatedTasks = [...tasks, newTask];
+    }
+
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+    setTask("");
+  };
+
+  const handleDeleteTask = (id) => {
+    const updatedTasks = tasks.filter(task => task.id !== id);
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+  };
+
+  const handleCompleteTask = (id) => {
+    const updatedTasks = tasks.map(task =>
+      task.id === id ? { ...task, completed: !task.completed } : task
+    );
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+  };
+
+  const handleEditTask = (id) => {
+    const taskToEdit = tasks.find(t => t.id === id);
+    if (taskToEdit) {
+      setTask(taskToEdit.text);
+      setEditTaskId(id);
     }
   };
 
-  const handleEdit = (index) => {
-    setTodo({
-      ...todo,
-      taskAdd: allTasks[index].text,
-      taskEdit: index,
-    });
+  const clearAllTasks = () => {
+    setTasks([]);
+    saveTasks([]);
   };
+
+  const pendingTasks = tasks.filter(task => !task.completed);
+  const completedTasks = tasks.filter(task => task.completed);
 
   return (
     <div className="container mt-5">
-      <h2 className="text-center mb-3">To Do</h2>
+      <h2 className="text-center mb-3">To Do List</h2>
+
       <div className="input-group mb-3">
         <input
           type="text"
           className="form-control"
-          onChange={(e) =>
-            setTodo((prev) => ({
-              ...prev,
-              taskAdd: e.target.value,
-            }))
-          }
-          value={taskAdd}
+          value={task}
+          onChange={(e) => setTask(e.target.value)}
           placeholder="Enter task"
         />
         <button
-          onClick={handleAdd}
-          className="btn btn-outline-secondary"
+          onClick={handleAddTask}
+          className="btn btn-outline-primary"
           type="button"
         >
-          {taskEdit == null ? "Add" : "Update"}
+          {editTaskId ? "Update Task" : "Add Task"}
         </button>
       </div>
 
-      {allTasks.map((task, index) =>
-        !task.completed ? (
-          <div
-            key={index}
-            className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2"
-          >
-            <span>{task.text}</span>
+      {pendingTasks.map((task) => (
+        <div
+          key={task.id}
+          className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2"
+        >
+          <span>{task.text}</span>
+          <div>
             <button
               className="btn btn-warning btn-sm me-2"
-              onClick={() => handleEdit(index)}
+              onClick={() => handleEditTask(task.id)}
             >
               Edit
             </button>
             <button
-              className="btn btn-warning btn-sm me-2"
-              onClick={() => handleDelete(index)}
+              className="btn btn-danger btn-sm me-2"
+              onClick={() => handleDeleteTask(task.id)}
             >
               Delete
             </button>
             <button
-              className="btn btn-warning btn-sm me-2"
-              onClick={() => handleComplete(index)}
+              className="btn btn-success btn-sm"
+              onClick={() => handleCompleteTask(task.id)}
             >
-              Completed
+              Complete
             </button>
           </div>
-        ) : null
-      )}
- <h4 className="mt-4">Completed Tasks</h4>
-      {allTasks.some((task) => task.completed) && (
-        <>
-         
-          {allTasks.map((task, index) =>
-            task.completed ? (
-              <div
-                key={index}
-                className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2"
-              >
-                <span >{task.text}</span>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleDelete(index)}
-                >
-                  Delete
-                </button>
-              </div>
-            ) : null
-          )}
-        </>
-      )}
+        </div>
+      ))}
 
-      <div className="text-center mt-4">
-        <button className="btn btn-outline-danger" onClick={clearAllTasks}>
-          Clear All Tasks
-        </button>
-      </div>
+      <h4 className="mt-4">Completed Tasks</h4>
+      {completedTasks.map((task) => (
+        <div
+          key={task.id}
+          className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2"
+        >
+          <span className="text">{task.text}</span>
+          <div>
+            
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={() => handleDeleteTask(task.id)}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {tasks.length > 0 && (
+        <div className="text-center mt-4">
+          <button className="btn btn-outline-danger" onClick={clearAllTasks}>
+            Clear All Tasks
+          </button>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default ToDo;

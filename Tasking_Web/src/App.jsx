@@ -6,66 +6,64 @@ import DashBoard from "./Pages/DashBoard/DashBoard";
 import Footer from "./components/Footer/Footer";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const App = () => {
-  const [show, setShow] = useState();
-  const [signinuser, setsigninUser] = useState(null);
-  const [isSignIn, setIsSignIn] = useState(false);
+function App() {
+  const [currentPage, setCurrentPage] = useState('signup');
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(()=>{
-    const currentPage = localStorage.getItem("currentPage");
-    const signinuser = JSON.parse(localStorage.getItem("curentUser"));
-
-    if(signinuser){
-      setsigninUser(signinuser);
-      setShow(currentPage || "dashboard");
-      setIsSignIn(true);
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (user) {
+      setCurrentUser(user);
+      setIsSignedIn(true);
+      setCurrentPage('dashboard');
     }
+  }, []);
 
-  },[])
-
-  // useEffect(() => {
-  //   localStorage.setItem("currentUser", JSON.stringify(isSignIn));
-  //   localStorage.setItem("currentPage", show);
-
-  // }, [isSignIn, show] );
-  
-useEffect(() => {
-  if (signinuser) {
-    localStorage.setItem("currentUser", JSON.stringify(signinuser));
-  }
-  localStorage.setItem("currentPage", show);
-}, [signinuser, show]); 
-
-  const switchPage = () => {
-    switch (show) {
-      case "signup":
-        return <SignUp/>;
-      case "signin":
-        return <SignIn onSignIn={() => {
-          setShow("dashboard");
-          setIsSignIn(true);
-          
-        }} />;
-      case "dashboard":
-        return <DashBoard/>;
-      default:
-        return <SignUp/>;
-    }
+  const handleSignIn = (user) => {
+    setCurrentUser(user);
+    setIsSignedIn(true);
+    setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {
-    setShow("signin");
-    setIsSignIn(false);
+    localStorage.removeItem("currentUser");
+    setCurrentUser(null);
+    setIsSignedIn(false);
+    setCurrentPage('signin');
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'signup':
+        return <SignUp />;
+      case 'signin':
+        return <SignIn onSignIn={handleSignIn} />;
+      case 'dashboard':
+        return isSignedIn ? <DashBoard currentUser={currentUser} /> : <SignIn onSignIn={handleSignIn} />;
+      case 'profile':
+        return isSignedIn ? <Profile currentUser={currentUser} /> : <SignIn onSignIn={handleSignIn} />;
+      default:
+        return <SignUp />;
+    }
   };
 
   return (
-    <>
-      <Header onSwitch={setShow} isSignIn={isSignIn} onLogout={handleLogout} />
-      {switchPage()}
+    <div className="d-flex flex-column min-vh-100">
+      <Header 
+        currentPage={currentPage} 
+        setCurrentPage={setCurrentPage} 
+        isSignedIn={isSignedIn} 
+        handleLogout={handleLogout}
+        currentUser={currentUser}
+      />
+      <main className="container flex-grow-1">
+        {renderPage()}
+      </main>
       <Footer />
-    </>
+    </div>
   );
-};
+}
 
 
 export default App;
